@@ -1,0 +1,598 @@
+/* McDonald's Style - 1:1 wie am Terminal */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Speedee', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background: #F5F5F5;
+  min-height: 100vh;
+}
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* McDonald's Header - Gelb */
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  background: #FFBC0D;
+  color: #292929;
+  margin: 0;
+  padding: 30px 40px;
+  text-align: center;
+  font-size: 3em;
+  font-weight: bold;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+h2 {
+  color: #292929;
+  margin: 30px 0 20px 0;
+  font-size: 2em;
+  font-weight: bold;
+  text-align: center;
+}
+
+h3 {
+  color: #292929;
+  margin-bottom: 15px;
+  font-size: 1.5em;
+}
+
+.error-message {
+  background: #DA291C;
+  color: white;
+  padding: 20px;
+  margin: 20px 40px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1.2em;
+  text-align: center;
+}
+
+form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 40px 40px 40px;
+}
+
+.menu-section {
+  flex: 1;
+  margin-bottom: 20px;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+  margin-top: 20px;
+}
+
+/* Menu Items - Touch Friendly wie McDonald's Terminal */
+.menu-item {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  padding: 0;
+  border-radius: 25px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  cursor: pointer;
+  border: 3px solid transparent;
+}
+
+.menu-item:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+  border-color: #FFBC0D;
+}
+
+.item-image {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+  background: #f0f0f0;
+}
+
+.item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 30px;
+  gap: 12px;
+  background: white;
+  text-align: center;
+}
+
+.item-name {
+  font-weight: 900;
+  color: #292929;
+  font-size: 2.4em;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  line-height: 1.2;
+}
+
+.item-description {
+  color: #666;
+  font-size: 1.3em;
+  line-height: 1.6;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.item-price {
+  color: #DA291C;
+  font-weight: 900;
+  font-size: 2.4em;
+  margin-bottom: 20px;
+  letter-spacing: 0.5px;
+}
+
+/* Quantity Controls - McDonald's Touch Buttons */
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 25px;
+  padding: 10px 0;
+}
+
+.quantity-controls button {
+  width: 70px;
+  height: 70px;
+  border: none;
+  background: #DA291C;
+  color: white;
+  border-radius: 50%;
+  font-size: 38px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(218, 41, 28, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.quantity-controls button:hover:not(:disabled) {
+  background: #B81E1A;
+  transform: scale(1.15);
+  box-shadow: 0 6px 16px rgba(218, 41, 28, 0.6);
+}
+
+.quantity-controls button:active:not(:disabled) {
+  transform: scale(1.0);
+}
+
+.quantity-controls button:disabled {
+  background: #DDD;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.5;
+}
+
+.quantity {
+  min-width: 70px;
+  text-align: center;
+  font-weight: 900;
+  font-size: 2.4em;
+  color: #292929;
+  padding: 10px;
+  background: #F5F5F5;
+  border-radius: 12px;
+}
+
+/* Total Section - McDonald's Style */
+.total-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30px 40px;
+  background: white;
+  border-radius: 15px;
+  margin-bottom: 20px;
+  font-size: 1.8em;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.total-amount {
+  color: #DA291C;
+  font-size: 2em;
+}
+
+/* Submit Button - McDonald's Rot */
+.submit-button,
+.new-order-button {
+  width: 100%;
+  padding: 25px;
+  background: #DA291C;
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-size: 1.8em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(218, 41, 28, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.submit-button:hover:not(:disabled),
+.new-order-button:hover {
+  background: #B81E1A;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(218, 41, 28, 0.5);
+}
+
+.submit-button:active:not(:disabled),
+.new-order-button:active {
+  transform: translateY(0);
+}
+
+.submit-button:disabled {
+  background: #CCC;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Order Status - Like McDonald's Receipt Screen */
+.order-status {
+  text-align: center;
+  margin: 30px 40px;
+  padding: 30px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 20px 40px;
+  border-radius: 50px;
+  color: white;
+  font-weight: bold;
+  font-size: 1.5em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ready-notification {
+  background: #DA291C;
+  color: white;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  font-size: 2em;
+  font-weight: bold;
+  margin: 20px 40px;
+  animation: pulse-mcdonalds 2s ease-in-out infinite;
+  box-shadow: 0 6px 20px rgba(218, 41, 28, 0.5);
+}
+
+@keyframes pulse-mcdonalds {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+.order-details {
+  margin: 20px 40px;
+  padding: 30px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.items-list {
+  background: #F5F5F5;
+  border-radius: 12px;
+  padding: 25px;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 2px solid #E0E0E0;
+  font-size: 1.3em;
+}
+
+.item-row:last-child {
+  border-bottom: none;
+}
+
+.payment-section {
+  margin: 20px 40px;
+}
+
+.payment-button {
+  display: block;
+  width: 100%;
+  padding: 25px;
+  background: #FFBC0D;
+  color: #292929;
+  text-decoration: none;
+  text-align: center;
+  border-radius: 15px;
+  font-size: 1.8em;
+  font-weight: bold;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(255, 188, 13, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.payment-button:hover {
+  background: #E6A800;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(255, 188, 13, 0.5);
+}
+
+.status-timeline {
+  margin: 20px 40px;
+  padding: 30px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.timeline {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 30px;
+  background: #F5F5F5;
+  border-radius: 12px;
+  position: relative;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 25%;
+  right: 25%;
+  height: 4px;
+  background: #E0E0E0;
+  z-index: 0;
+}
+
+.timeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  opacity: 0.4;
+  transition: opacity 0.3s;
+  z-index: 1;
+}
+
+.timeline-step.active {
+  opacity: 1;
+}
+
+.timeline-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #CCC;
+  border: 4px solid #CCC;
+  transition: all 0.3s;
+}
+
+.timeline-step.active .timeline-dot {
+  background: #FFBC0D;
+  border-color: #FFBC0D;
+  box-shadow: 0 0 20px rgba(255, 188, 13, 0.6);
+}
+
+.timeline-label {
+  font-weight: bold;
+  font-size: 1.2em;
+  color: #666;
+  text-align: center;
+}
+
+.timeline-step.active .timeline-label {
+  color: #292929;
+}
+
+.new-order-button {
+  background: #FFBC0D;
+  color: #292929;
+  margin: 20px 40px;
+}
+
+.new-order-button:hover {
+  background: #E6A800;
+  box-shadow: 0 6px 16px rgba(255, 188, 13, 0.5);
+}
+
+/* Out of Stock Styling */
+.menu-item.out-of-stock {
+  opacity: 0.6;
+  position: relative;
+}
+
+.menu-item.out-of-stock:hover {
+  transform: none;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  border-color: transparent;
+  cursor: not-allowed;
+}
+
+.menu-item.out-of-stock .item-image {
+  filter: grayscale(50%);
+}
+
+.item-name-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.out-of-stock-badge {
+  display: inline-block;
+  background: #DA291C;
+  color: white;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 0.5em;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 8px rgba(218, 41, 28, 0.4);
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2em;
+    padding: 20px;
+  }
+
+  h2 {
+    font-size: 1.5em;
+  }
+
+  .menu-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .menu-item {
+    margin-bottom: 0;
+  }
+
+  .item-image {
+    height: 220px;
+  }
+
+  .item-info {
+    padding: 20px;
+    text-align: center;
+  }
+
+  .item-name {
+    font-size: 1.8em;
+  }
+
+  .item-description {
+    font-size: 1.1em;
+  }
+
+  .item-price {
+    font-size: 1.6em;
+  }
+
+  .quantity-controls {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .quantity-controls button {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+  }
+
+  .quantity {
+    font-size: 1.5em;
+  }
+
+  .total-section {
+    font-size: 1.3em;
+    padding: 20px;
+  }
+
+  .total-amount {
+    font-size: 1.5em;
+  }
+
+  .submit-button,
+  .payment-button,
+  .new-order-button {
+    font-size: 1.3em;
+    padding: 20px;
+  }
+
+  .timeline {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .timeline::before {
+    top: 15%;
+    bottom: 15%;
+    left: 50%;
+    width: 4px;
+    height: auto;
+  }
+}
+
+/* Large Touchscreens */
+@media (min-width: 1200px) {
+  h1 {
+    font-size: 4em;
+    padding: 40px;
+  }
+
+  .item-image {
+    height: 320px;
+  }
+
+  .item-info {
+    padding: 30px 35px;
+  }
+
+  .item-name {
+    font-size: 2.5em;
+  }
+
+  .item-description {
+    font-size: 1.3em;
+  }
+
+  .item-price {
+    font-size: 2.2em;
+  }
+
+  .quantity-controls button {
+    width: 70px;
+    height: 70px;
+    font-size: 36px;
+  }
+
+  .quantity {
+    font-size: 2.5em;
+    min-width: 80px;
+  }
+}

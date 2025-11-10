@@ -1,0 +1,56 @@
+# OpenTelemetry Collector Configuration
+# Warum brauchen wir diese Config?
+# → Definiert: WO empfängt Collector Traces? (receivers)
+# → Definiert: WO sendet Collector Traces hin? (exporters)
+# → Definiert: Pipeline Traces → Processing → Jaeger
+
+receivers:
+  # OTLP Receiver: Empfängt Traces von Go Services
+  # Warum otlp?
+  # → OpenTelemetry Protocol - Standard für Telemetry Data
+  # → gRPC: Port 4317 (schnell, binär)
+  # → HTTP: Port 4318 (falls Services HTTP nutzen)
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317  # Services senden hierher!
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # Batch Processor: Sammelt Traces und sendet in Batches
+  # Warum batching?
+  # → Effizienz: Nicht jede Trace einzeln senden
+  # → Timeout: Nach 1s wird Batch gesendet (auch wenn nicht voll)
+  # → Send Batch Size: Wenn 8192 Traces gesammelt → sofort senden
+  batch:
+    timeout: 1s
+    send_batch_size: 8192
+
+exporters:
+  # OTLP Exporter: Sendet Traces zu Jaeger UI via OTLP
+  # Warum otlp statt jaeger?
+  # → jaeger exporter ist deprecated in neuem Collector
+  # → Jaeger unterstützt OTLP Protocol (Port 4317)
+  # → Visualisierung: Siehe Traces in http://localhost:16686
+  otlp:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true  # Kein TLS in lokaler Dev Umgebung
+
+  # Debug Exporter: Schreibt Traces zu stdout
+  # Warum debug?
+  # → Debug: Siehe Traces in Collector Logs
+  # → Development: Gut zum Testen ob Traces ankommen
+  debug:
+    verbosity: detailed
+
+# Pipelines: Definiert Datenfluss
+# Flow: Services → Receiver → Processor → Exporter → Jaeger
+service:
+  pipelines:
+    # Traces Pipeline
+    traces:
+      receivers: [otlp]      # Empfange von Services (gRPC Port 4317)
+      processors: [batch]    # Verarbeite in Batches
+      exporters: [otlp, debug]  # Sende zu Jaeger via OTLP + stdout logs

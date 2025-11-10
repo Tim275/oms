@@ -1,0 +1,55 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+order-microservices
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+
+# Environment variables
+.env
+**/.env
+
+# Temporary files
+tmp/
+**/tmp/
+
+# Air live reload
+**/.air.toml
+
+# Logs
+*.log
+
+# Documentation and Notes (keep README.md!)
+*.md
+!README.md
+claude.md
+*.docx
+**/notes/
+**/notizen/
+
+# Observability (optional - uncomment in docker-compose.yml to use)
+observability/prometheus.yml
+observability/grafana/

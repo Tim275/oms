@@ -1,0 +1,190 @@
+syntax = "proto3";
+
+option go_package = "github.com/timour/order-microservices/common/api";
+
+package api;
+
+// ============================================================================
+// SHARED MESSAGES - Verwendet von mehreren Services
+// ============================================================================
+
+// Order - Haupt-Entity: Repräsentiert eine Bestellung im System
+// VERWENDET VON:
+//   - Orders Service (Server): Speichert/verwaltet Orders in MongoDB
+//   - Gateway (Client): Empfängt Orders und gibt sie an Frontend weiter
+//   - Payments Service (Consumer): Liest Orders aus RabbitMQ (order.created event)
+//   - Kitchen Service (Consumer): Liest Orders aus RabbitMQ (order.paid event)
+message Order {
+    string id = 1;              // Eindeutige ID (MongoDB ObjectID als hex)
+    string customer_id = 2;     // Wer bestellt? (z.B. "user_123")
+    string status = 3;          // Lifecycle: "pending" → "waiting_payment" → "paid" → "preparing" → "ready"
+    repeated Item items = 4;    // Liste der bestellten Produkte
+    string payment_link = 5;    // Stripe Checkout URL (von Payments Service generiert)
+    string created_at = 6;      // Timestamp when order was created (ISO 8601 format)
+}
+
+// Item - Vollständiges Produkt mit allen Details
+// VERWENDET VON:
+//   - Stock Service (Server): Liest Items aus PostgreSQL
+//   - Gateway (Client): Holt Items für Menu-Anzeige
+//   - Orders Service (Client): Validiert Items beim Order erstellen
+message Item {
+    string ID = 1;              // Produkt-ID (z.B. "1", "2")
+    string Name = 2;            // Produktname (z.B. "Burger", "Pommes")
+    int32 Quantity = 3;         // Verfügbare Anzahl oder bestellte Menge
+    string PriceID = 4;         // Stripe Price-ID (z.B. "price_1PA7...")
+}
+
+// ItemsWithQuantity - Minimal Produkt-Info für Order Requests
+// VERWENDET VON:
+//   - Gateway (Client): Sendet Customer-Bestellung an Orders Service
+//   - Orders Service (Client): Prüft Stock-Verfügbarkeit
+message ItemsWithQuantity {
+    string ID = 1;              // Welches Produkt? (z.B. "1")
+    int32 Quantity = 2;         // Wie viele? (z.B. 2)
+}
+
+// ============================================================================
+// ORDERS SERVICE - gRPC Server auf Port 9000
+// ============================================================================
+
+// CreateOrderRequest - Gateway → Orders Service
+// FLOW: Customer App → Gateway → Orders Service → Stock Service (Validation)
+message CreateOrderRequest {
+    string customer_id = 1;                 // Wer bestellt?
+    repeated ItemsWithQuantity items = 2;   // Was wird bestellt?
+}
+
+// GetOrderRequest - Gateway → Orders Service (Order abrufen)
+// FLOW: Customer App (Status Check) → Gateway → Orders Service → MongoDB
+message GetOrderRequest {
+    string order_id = 1;        // Welche Bestellung?
+    string customer_id = 2;     // Sicherheit: Gehört die Order diesem Customer?
+}
+
+// GetOrdersByStatusRequest - Gateway/Kitchen Display → Orders Service
+// FLOW: Kitchen Display → Gateway → Orders Service → MongoDB
+// ZWECK: Holt alle Orders mit bestimmtem Status (z.B. "preparing")
+message GetOrdersByStatusRequest {
+    string status = 1;          // Filter by status (e.g., "preparing", "ready")
+}
+
+// GetOrdersByStatusResponse - Orders Service → Gateway/Kitchen Display
+message GetOrdersByStatusResponse {
+    repeated Order orders = 1;  // Liste aller Orders mit dem gewünschten Status
+}
+
+// OrderService - gRPC Server implementiert von ORDERS SERVICE
+// CLIENTS:
+//   - Gateway (ruft alle 4 Methoden auf)
+//   - Payments Service (ruft UpdateOrder auf via gRPC)
+//   - Kitchen Service (ruft UpdateOrder auf via gRPC)
+service OrderService {
+    // Gateway → Orders: Neue Bestellung erstellen
+    rpc CreateOrder(CreateOrderRequest) returns (Order);
+
+    // Payments/Kitchen → Orders: Order Status aktualisieren (z.B. paid → preparing)
+    rpc UpdateOrder(Order) returns (Order);
+
+    // Gateway → Orders: Einzelne Order abrufen (Customer Status Check)
+    rpc GetOrder(GetOrderRequest) returns (Order);
+
+    // Gateway → Orders: Alle Orders mit bestimmtem Status (Kitchen Display)
+    rpc GetOrdersByStatus(GetOrdersByStatusRequest) returns (GetOrdersByStatusResponse);
+}
+
+// ============================================================================
+// STOCK SERVICE - gRPC Server auf Port 2002
+// ============================================================================
+
+// CheckIfItemIsInStockRequest - Orders Service → Stock Service
+// FLOW: Gateway → Orders Service → Stock Service → PostgreSQL
+// ZWECK: Prüfen ob alle Items verfügbar sind BEVOR Order erstellt wird
+message CheckIfItemIsInStockRequest {
+    repeated ItemsWithQuantity Items = 1;
+}
+
+// CheckIfItemIsInStockResponse - Stock Service → Orders Service
+message CheckIfItemIsInStockResponse {
+    bool InStock = 1;              // true = alle Items verfügbar, false = mindestens 1 fehlt
+    repeated Item Items = 2;        // Vollständige Item-Details (Name, PriceID aus DB)
+}
+
+// GetItemsRequest - Gateway → Stock Service
+// FLOW: Customer App (Menu laden) → Gateway → Stock Service → PostgreSQL
+// ZWECK: Alle verfügbaren Produkte für Menu-Anzeige holen
+message GetItemsRequest {
+    repeated string ItemIDs = 1;    // Leer = alle Items, sonst nur spezifische IDs
+}
+
+// GetItemsResponse - Stock Service → Gateway
+message GetItemsResponse {
+    repeated Item Items = 1;        // Liste aller Items mit Quantities
+}
+
+// ReserveStockRequest - Orders Service → Stock Service
+// FLOW: Gateway → Orders Service → Stock Service → PostgreSQL (INSERT reservation)
+// ZWECK: Stock für 15 Minuten reservieren (BEFORE payment)
+message ReserveStockRequest {
+    string OrderID = 1;             // Order ID (für Tracking)
+    repeated Item Items = 2;        // Items mit Quantities zu reservieren
+}
+
+// ReserveStockResponse - Stock Service → Orders Service
+message ReserveStockResponse {
+    string ReservationID = 1;       // UUID für diese Reservation (später confirmieren via RabbitMQ)
+}
+
+// StockService - gRPC Server implementiert von STOCK SERVICE
+// CLIENTS:
+//   - Gateway (ruft GetItems auf für Menu)
+//   - Orders Service (ruft CheckIfItemIsInStock & ReserveStock auf)
+service StockService {
+    // Orders → Stock: Prüfen ob Items verfügbar sind
+    rpc CheckIfItemIsInStock(CheckIfItemIsInStockRequest) returns (CheckIfItemIsInStockResponse);
+
+    // Gateway → Stock: Menu Items laden (mit Quantities für Out-of-Stock Display)
+    rpc GetItems(GetItemsRequest) returns (GetItemsResponse);
+
+    // Orders → Stock: Stock reservieren (15 min hold vor Payment)
+    rpc ReserveStock(ReserveStockRequest) returns (ReserveStockResponse);
+}
+
+// ============================================================================
+// SERVICE COMMUNICATION FLOW
+// ============================================================================
+//
+// 1. MENU ANZEIGEN:
+//    Customer App → Gateway → Stock Service (GetItems) → PostgreSQL
+//    ↓ Zeigt Items mit Quantities (Out-of-Stock wenn quantity=0)
+//
+// 2. ORDER ERSTELLEN:
+//    Customer App → Gateway → Orders Service (CreateOrder)
+//    ↓ Orders → Stock (CheckIfItemIsInStock) → Validation
+//    ↓ Orders → MongoDB (Save Order mit status="pending")
+//    ↓ Orders → Stock (ReserveStock) → PostgreSQL (15 min hold)
+//    ↓ Orders → RabbitMQ (publish "order.created" event)
+//
+// 3. PAYMENT:
+//    Payments Service (Consumer) ← RabbitMQ ("order.created")
+//    ↓ Payments → Stripe (Create Checkout Session)
+//    ↓ Payments → Orders (UpdateOrder mit payment_link)
+//
+// 4. PAYMENT WEBHOOK:
+//    Stripe → Payments Service (Webhook: checkout.session.completed)
+//    ↓ Payments → Orders (UpdateOrder status="paid")
+//    ↓ Orders → RabbitMQ (publish "order.paid" event)
+//
+// 5. KITCHEN ERHÄLT ORDER:
+//    Kitchen Service (Consumer) ← RabbitMQ ("order.paid")
+//    ↓ Kitchen → Orders (UpdateOrder status="preparing")
+//    ↓ Orders → RabbitMQ (publish "order.preparing" event)
+//
+// 6. KITCHEN DISPLAY:
+//    Kitchen Display → Gateway → Orders (GetOrdersByStatus status="preparing")
+//    ↓ Zeigt alle Orders die gerade zubereitet werden
+//    ↓ Cook klickt "Mark as Ready"
+//    ↓ Kitchen Display → Gateway → Orders (UpdateOrder status="ready")
+//    ↓ Orders → RabbitMQ (publish "order.ready" event)
+//
+// ============================================================================

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Thanks for your order!</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<style>
+  html {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    margin: 0;
+    padding: 0;
+    background-color: wheat;
+    color: #333333;
+  }
+
+  section {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .receipt {
+    background-color: white;
+    border: 2px solid #333;
+    border-radius: 10px;
+    padding: 30px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    font-family: 'Courier New', monospace;
+  }
+
+  .receipt-header {
+    text-align: center;
+    border-bottom: 2px dashed #333;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+  }
+
+  .order-number {
+    font-size: 48px;
+    font-weight: bold;
+    color: #d32f2f;
+    margin: 10px 0;
+  }
+
+  .thank-you {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 10px 0;
+  }
+
+  .order-items {
+    margin: 20px 0;
+    border-bottom: 2px dashed #333;
+    padding-bottom: 20px;
+  }
+
+  .item {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+    padding: 5px 0;
+  }
+
+  .item-name {
+    font-weight: bold;
+  }
+
+  .item-quantity {
+    color: #666;
+  }
+
+  .status-section {
+    margin: 20px 0;
+    padding: 15px;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  .status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+
+  .status-waiting {
+    background-color: #cce5ff;
+    color: #004085;
+  }
+
+  .status-paid {
+    background-color: #d4edda;
+    color: #155724;
+  }
+
+  .status-ready {
+    background-color: #d1ecf1;
+    color: #0c5460;
+  }
+
+  .ready-popup {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 2px solid green;
+    border-radius: 5px;
+    z-index: 1;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  }
+
+  .payment-popup {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 2px solid green;
+    border-radius: 5px;
+    z-index: 1;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  }
+
+  .payment-popup a {
+    margin-top: 10px;
+    padding: 5px 10px;
+    background-color: green;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+  }
+
+  .ready-popup p {
+    margin: 0;
+  }
+
+  .close-btn {
+    margin-top: 10px;
+    padding: 5px 10px;
+    background-color: green;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+
+  }
+</style>
+
+<body>
+  <section>
+    <div class="receipt">
+      <div class="receipt-header">
+        <div class="thank-you">Thank You!</div>
+        <div class="order-number">#<span id="orderNumber"></span></div>
+        <p style="margin: 10px 0; color: #666;">Order placed successfully</p>
+      </div>
+
+      <div class="order-items" id="orderItems">
+        <!-- Items will be populated by JavaScript -->
+      </div>
+
+      <div class="status-section" id="statusSection">
+        <div id="orderStatus">Processing your order...</div>
+      </div>
+    </div>
+
+    <div class="payment-popup">
+      <p>Please complete your payment to continue</p>
+
+      <a id="payment-link" href="#" target="_blank">Go to Payment</a>
+    </div>
+
+  </section>
+</body>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const customerID = urlParams.get('customerID');
+  const orderID = urlParams.get('orderID');
+
+  // Display order number immediately
+  document.getElementById('orderNumber').innerText = orderID;
+
+  const order = {
+    customerID,
+    orderID,
+    status: "pending",
+    items: []
+  };
+
+  // Render order items
+  const renderOrderItems = (items) => {
+    const itemsContainer = document.getElementById('orderItems');
+    if (!items || items.length === 0) {
+      itemsContainer.innerHTML = '<p style="text-align: center; color: #666;">Loading order details...</p>';
+      return;
+    }
+
+    let itemsHTML = '<h3 style="margin: 0 0 15px 0; text-align: center;">Your Order</h3>';
+    items.forEach(item => {
+      itemsHTML += `
+        <div class="item">
+          <div>
+            <div class="item-name">${item.Name || 'Item'}</div>
+            <div class="item-quantity">Qty: ${item.Quantity || 1}</div>
+          </div>
+          <div class="item-name">x${item.Quantity || 1}</div>
+        </div>
+      `;
+    });
+    itemsContainer.innerHTML = itemsHTML;
+  };
+
+  // Update status display
+  const updateStatusDisplay = (status) => {
+    const statusSection = document.getElementById('statusSection');
+    const statusText = document.getElementById('orderStatus');
+
+    // Remove all status classes
+    statusSection.className = 'status-section';
+
+    switch(status) {
+      case 'pending':
+        statusSection.classList.add('status-pending');
+        statusText.innerHTML = '⏳ Processing your order...';
+        break;
+      case 'waiting_payment':
+        statusSection.classList.add('status-waiting');
+        statusText.innerHTML = '💳 Waiting for payment';
+        // show payment popup
+        document.querySelector('.payment-popup').style.display = 'flex';
+        break;
+      case 'paid':
+        statusSection.classList.add('status-paid');
+        statusText.innerHTML = '✅ Payment received!<br><small>Your order is being prepared...</small>';
+        // hide payment popup
+        document.querySelector('.payment-popup').style.display = 'none';
+        break;
+      case 'ready':
+        statusSection.classList.add('status-ready');
+        statusText.innerHTML = '🎉 Your order is ready for pickup!';
+        // hide payment popup
+        document.querySelector('.payment-popup').style.display = 'none';
+        break;
+      default:
+        statusSection.classList.add('status-pending');
+        statusText.innerHTML = '⏳ Processing your order...';
+    }
+  };
+
+  // Poll the server for the order status
+  const pollOrderStatus = async () => {
+    try {
+      const response = await fetch(`/api/customers/${customerID}/orders/${orderID}`);
+      const data = await response.json();
+
+      // Update order items if available
+      if (data.Items && data.Items.length > 0) {
+        order.items = data.Items;
+        renderOrderItems(data.Items);
+      }
+
+      // Update payment link if available
+      if (data.PaymentLink) {
+        document.getElementById('payment-link').href = data.PaymentLink;
+      }
+
+      // Update status
+      if (data.Status) {
+        order.status = data.Status;
+        updateStatusDisplay(data.Status);
+      }
+
+      // Continue polling unless order is ready
+      if (data.Status !== 'ready') {
+        setTimeout(pollOrderStatus, 5000);
+      }
+    } catch (error) {
+      console.error('Error fetching order status:', error);
+      setTimeout(pollOrderStatus, 5000);
+    }
+  };
+
+  // Start polling
+  pollOrderStatus();
+</script>
+
+</html>
