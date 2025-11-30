@@ -12,9 +12,9 @@
 [![Jaeger](https://img.shields.io/badge/Jaeger-Tracing-66CFE3?style=flat&logo=jaeger)](https://www.jaegertracing.io/)
 
 
-## Architecture 
+## Architecture
 
-<img width="1069" height="582" alt="image" src="https://github.com/user-attachments/assets/014c66cb-d84d-4a5a-abbf-ea5c4b738f52" />
+![Architecture](docs/architecture.png)
 
 
 
@@ -65,6 +65,4 @@ Where `localhost:8082/webhook` is the payment service HTTP server address.
 
 ## Deployment
 
-Build Docker images for each microservice and push them to a container registry. Deploy using Docker Compose or orchestration tools like Kubernetes.
-
-**Planned:** Kubernetes deployment as tenant on [Talos Homelab Cluster](https://github.com/Tim275/talos-homelab)
+Kubernetes manifests: [oms-tenant](https://github.com/Tim275/oms-tenant)
