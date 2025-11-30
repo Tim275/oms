@@ -1,0 +1,130 @@
+# ServiceMonitors für OMS Microservices
+# Ermöglicht Prometheus das automatische Scraping von /metrics Endpoints
+# Diese CRDs werden von kube-prometheus-stack erkannt und konfigurieren Prometheus automatisch
+#
+# WICHTIG: ServiceMonitors müssen im GLEICHEN Namespace wie die Services sein (oms)
+# ODER Prometheus muss berechtigt sein, andere Namespaces zu scrapen
+#
+# Metrics Ports pro Service (laut CLAUDE.md):
+# - Gateway: 9001
+# - Orders: 9001 (bereits als "metrics" Port definiert)
+# - Payments: 9002
+# - Stock: 8083 (HTTP port)
+# - Kitchen: 8083 (HTTP port)
+#
+# Anwendung: kubectl apply -f grafana/servicemonitors.yaml
+
+---
+# Gateway ServiceMonitor
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gateway
+  namespace: oms
+  labels:
+    app: gateway
+    release: kube-prometheus-stack  # Wichtig! Prometheus Operator sucht nach diesem Label
+spec:
+  selector:
+    matchLabels:
+      app: gateway
+  namespaceSelector:
+    matchNames:
+      - oms
+  endpoints:
+    - port: http          # Nutzt den http Port (8080) - Gateway exposed metrics auf /metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+# Orders ServiceMonitor
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: orders
+  namespace: oms
+  labels:
+    app: orders
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: orders
+  namespaceSelector:
+    matchNames:
+      - oms
+  endpoints:
+    - port: metrics       # Orders hat bereits einen "metrics" Port (9001)
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+# Payments ServiceMonitor
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: payments
+  namespace: oms
+  labels:
+    app: payments
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: payments
+  namespaceSelector:
+    matchNames:
+      - oms
+  endpoints:
+    - port: http          # Nutzt den http Port (8082) - Payments exposed metrics auf /metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+# Stock ServiceMonitor
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: stock
+  namespace: oms
+  labels:
+    app: stock
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: stock
+  namespaceSelector:
+    matchNames:
+      - oms
+  endpoints:
+    - port: http          # Stock HTTP Port (8083) exposed /metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+
+---
+# Kitchen ServiceMonitor
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kitchen
+  namespace: oms
+  labels:
+    app: kitchen
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: kitchen
+  namespaceSelector:
+    matchNames:
+      - oms
+  endpoints:
+    - port: http          # Kitchen HTTP Port (8083) exposed /metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

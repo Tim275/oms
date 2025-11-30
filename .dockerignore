@@ -1,0 +1,38 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Temporary files
+tmp/
+**/tmp/
+.air.toml
+**/.air.toml
+
+# Environment
+.env
+**/.env
+
+# Docs
+*.md
+*.docx
+
+# OS
+.DS_Store
+
+# Development
+go.work
+go.work.sum

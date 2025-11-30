@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Payment Successful - Your Receipt</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .receipt-container {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 450px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  .success-icon {
+    text-align: center;
+    font-size: 60px;
+    margin-bottom: 10px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .header h1 {
+    color: #4CAF50;
+    font-size: 28px;
+    margin-bottom: 5px;
+  }
+
+  .header p {
+    color: #666;
+    font-size: 14px;
+  }
+
+  .order-number-box {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    margin-bottom: 25px;
+  }
+
+  .order-number-label {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0.9;
+  }
+
+  .order-number-value {
+    font-size: 56px;
+    font-weight: bold;
+    margin: 10px 0;
+  }
+
+  .order-number-note {
+    font-size: 12px;
+    opacity: 0.8;
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eee;
+  }
+
+  .order-items {
+    margin-bottom: 25px;
+  }
+
+  .item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .item-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .item-qty {
+    background: #f5f5f5;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .item-name {
+    font-weight: 500;
+  }
+
+  .item-price {
+    color: #666;
+    font-size: 14px;
+  }
+
+  .item-total {
+    font-weight: 600;
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px 0;
+    margin-top: 10px;
+    border-top: 2px solid #333;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 30px;
+    font-weight: 600;
+    margin: 20px 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .status-preparing {
+    background: #e3f2fd;
+    color: #1565c0;
+  }
+
+  .status-ready {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .print-btn {
+    width: 100%;
+    padding: 15px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background 0.3s;
+  }
+
+  .print-btn:hover {
+    background: #43a047;
+  }
+
+  .back-btn {
+    width: 100%;
+    padding: 12px;
+    background: #f5f5f5;
+    color: #333;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @media print {
+    html { background: white; }
+    body { padding: 0; }
+    .receipt-container { box-shadow: none; }
+    .print-btn, .back-btn { display: none; }
+  }
+</style>
+
+<body>
+  <div class="receipt-container">
+    <div id="loadingState" class="loading">
+      <div class="spinner"></div>
+      <p>Loading your receipt...</p>
+    </div>
+
+    <div id="receiptContent" style="display: none;">
+      <div class="success-icon">✅</div>
+
+      <div class="header">
+        <h1>Payment Successful!</h1>
+        <p>Thank you for your order</p>
+      </div>
+
+      <div class="order-number-box">
+        <div class="order-number-label">Order Number</div>
+        <div class="order-number-value">#<span id="orderNumber">-</span></div>
+        <div class="order-number-note">Show this number when picking up</div>
+      </div>
+
+      <div class="status-badge status-preparing" id="statusBadge">
+        <span>🍳</span>
+        <span id="statusText">Your order is being prepared</span>
+      </div>
+
+      <div class="order-items">
+        <div class="section-title">Your Order</div>
+        <div id="itemsList">
+          <!-- Items populated by JS -->
+        </div>
+        <div class="total-row">
+          <span>Total</span>
+          <span>€<span id="totalAmount">0.00</span></span>
+        </div>
+      </div>
+
+      <button class="print-btn" onclick="window.print()">
+        🖨️ Print Receipt
+      </button>
+
+      <button class="back-btn" onclick="goToCustomerApp()">
+        ← Back to Order App
+      </button>
+    </div>
+  </div>
+</body>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const customerID = urlParams.get('customerID');
+  const orderID = urlParams.get('orderID');
+
+  // Menu prices (fallback)
+  const menuPrices = {
+    'Burger': 4.00,
+    'Pommes': 3.50
+  };
+
+  // Go back to customer app
+  function goToCustomerApp() {
+    const hostname = window.location.hostname;
+    if (hostname.includes('timourhomelab.org')) {
+      window.location.href = 'https://oms.timourhomelab.org';
+    } else {
+      window.location.href = 'http://localhost:3000';
+    }
+  }
+
+  // Render items list
+  const renderItems = (items) => {
+    const itemsList = document.getElementById('itemsList');
+    const totalAmount = document.getElementById('totalAmount');
+
+    if (!items || items.length === 0) return;
+
+    let total = 0;
+    let html = '';
+
+    items.forEach(item => {
+      const price = item.Price || menuPrices[item.Name] || 5.00;
+      const qty = item.Quantity || 1;
+      const itemTotal = price * qty;
+      total += itemTotal;
+
+      html += `
+        <div class="item-row">
+          <div class="item-info">
+            <span class="item-qty">${qty}x</span>
+            <span class="item-name">${item.Name}</span>
+            <span class="item-price">€${price.toFixed(2)}</span>
+          </div>
+          <span class="item-total">€${itemTotal.toFixed(2)}</span>
+        </div>
+      `;
+    });
+
+    itemsList.innerHTML = html;
+    totalAmount.innerText = total.toFixed(2);
+  };
+
+  // Update status display
+  const updateStatus = (status) => {
+    const badge = document.getElementById('statusBadge');
+    const text = document.getElementById('statusText');
+
+    badge.className = 'status-badge';
+
+    switch(status) {
+      case 'preparing':
+        badge.classList.add('status-preparing');
+        text.innerText = 'Your order is being prepared';
+        break;
+      case 'ready':
+        badge.classList.add('status-ready');
+        badge.innerHTML = '<span>🎉</span><span>Your order is ready for pickup!</span>';
+        break;
+      default:
+        badge.classList.add('status-preparing');
+        text.innerText = 'Processing your order...';
+    }
+  };
+
+  // Fetch order data
+  const fetchOrder = async () => {
+    try {
+      const response = await fetch(`/api/customers/${customerID}/orders/${orderID}`);
+      const data = await response.json();
+
+      console.log('Order data:', data);
+
+      // Hide loading, show content
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('receiptContent').style.display = 'block';
+
+      // Update order number
+      const orderNum = data.order_number || data.OrderNumber || '-';
+      document.getElementById('orderNumber').innerText = orderNum;
+
+      // Update items
+      const items = data.items || data.Items || [];
+      renderItems(items);
+
+      // Update status
+      const status = data.status || data.Status || 'preparing';
+      updateStatus(status);
+
+      // Continue polling if not ready
+      if (status !== 'ready') {
+        setTimeout(fetchOrder, 5000);
+      }
+    } catch (error) {
+      console.error('Error fetching order:', error);
+      document.getElementById('loadingState').innerHTML = `
+        <p style="color: #d32f2f;">Error loading order</p>
+        <button onclick="fetchOrder()" style="margin-top: 10px; padding: 10px 20px; cursor: pointer;">Retry</button>
+      `;
+    }
+  };
+
+  // Start fetching
+  fetchOrder();
+</script>
+
+</html>

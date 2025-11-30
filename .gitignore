@@ -1,0 +1,61 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+order-microservices
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+
+# Environment variables
+.env
+**/.env
+
+# Temporary files
+tmp/
+**/tmp/
+
+# Air live reload
+**/.air.toml
+
+# Logs
+*.log
+
+# Documentation and Notes
+*.docx
+**/notes/
+**/notizen/
+
+# Private Setup Documentation (Kubernetes deployment details)
+SETUP4.md
+
+# Observability (optional - uncomment in docker-compose.yml to use)
+observability/prometheus.yml
+observability/grafana/
+
+# Work-in-Progress Features (WIP)
+# Business Metrics implementation files - Test before committing!
+# common/metrics/business_metrics.go  # Uncomment to ignore
+# E2E Test scripts are in .md format (already ignored above)
+# scripts/e2e-test.sh  # Uncomment to ignore

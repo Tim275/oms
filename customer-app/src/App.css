@@ -1,0 +1,960 @@
+/* McDonald's Style - 1:1 wie am Terminal */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Speedee', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background: #F5F5F5;
+  min-height: 100vh;
+}
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* McDonald's Header - Gelb */
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  background: #FFBC0D;
+  color: #292929;
+  margin: 0;
+  padding: 30px 40px;
+  text-align: center;
+  font-size: 3em;
+  font-weight: bold;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+h2 {
+  color: #292929;
+  margin: 30px 0 20px 0;
+  font-size: 2em;
+  font-weight: bold;
+  text-align: center;
+}
+
+h3 {
+  color: #292929;
+  margin-bottom: 15px;
+  font-size: 1.5em;
+}
+
+.error-message {
+  background: #DA291C;
+  color: white;
+  padding: 20px;
+  margin: 20px 40px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1.2em;
+  text-align: center;
+}
+
+form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 40px 40px 40px;
+}
+
+.menu-section {
+  flex: 1;
+  margin-bottom: 20px;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+  margin-top: 20px;
+}
+
+/* Menu Items - Touch Friendly wie McDonald's Terminal */
+.menu-item {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  padding: 0;
+  border-radius: 25px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  cursor: pointer;
+  border: 3px solid transparent;
+}
+
+.menu-item:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+  border-color: #FFBC0D;
+}
+
+.item-image {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+  background: #f0f0f0;
+}
+
+.item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 30px;
+  gap: 12px;
+  background: white;
+  text-align: center;
+}
+
+.item-name {
+  font-weight: 900;
+  color: #292929;
+  font-size: 2.4em;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  line-height: 1.2;
+}
+
+.item-description {
+  color: #666;
+  font-size: 1.3em;
+  line-height: 1.6;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.item-price {
+  color: #DA291C;
+  font-weight: 900;
+  font-size: 2.4em;
+  margin-bottom: 20px;
+  letter-spacing: 0.5px;
+}
+
+/* Quantity Controls - McDonald's Touch Buttons */
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 25px;
+  padding: 10px 0;
+}
+
+.quantity-controls button {
+  width: 70px;
+  height: 70px;
+  border: none;
+  background: #DA291C;
+  color: white;
+  border-radius: 50%;
+  font-size: 38px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(218, 41, 28, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.quantity-controls button:hover:not(:disabled) {
+  background: #B81E1A;
+  transform: scale(1.15);
+  box-shadow: 0 6px 16px rgba(218, 41, 28, 0.6);
+}
+
+.quantity-controls button:active:not(:disabled) {
+  transform: scale(1.0);
+}
+
+.quantity-controls button:disabled {
+  background: #DDD;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.5;
+}
+
+.quantity {
+  min-width: 70px;
+  text-align: center;
+  font-weight: 900;
+  font-size: 2.4em;
+  color: #292929;
+  padding: 10px;
+  background: #F5F5F5;
+  border-radius: 12px;
+}
+
+/* Total Section - McDonald's Style */
+.total-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30px 40px;
+  background: white;
+  border-radius: 15px;
+  margin-bottom: 20px;
+  font-size: 1.8em;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.total-amount {
+  color: #DA291C;
+  font-size: 2em;
+}
+
+/* Submit Button - McDonald's Rot */
+.submit-button,
+.new-order-button {
+  width: 100%;
+  padding: 25px;
+  background: #DA291C;
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-size: 1.8em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(218, 41, 28, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.submit-button:hover:not(:disabled),
+.new-order-button:hover {
+  background: #B81E1A;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(218, 41, 28, 0.5);
+}
+
+.submit-button:active:not(:disabled),
+.new-order-button:active {
+  transform: translateY(0);
+}
+
+.submit-button:disabled {
+  background: #CCC;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Order Status - Like McDonald's Receipt Screen */
+.order-status {
+  text-align: center;
+  margin: 30px 40px;
+  padding: 30px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 20px 40px;
+  border-radius: 50px;
+  color: white;
+  font-weight: bold;
+  font-size: 1.5em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ready-notification {
+  background: #DA291C;
+  color: white;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  font-size: 2em;
+  font-weight: bold;
+  margin: 20px 40px;
+  animation: pulse-mcdonalds 2s ease-in-out infinite;
+  box-shadow: 0 6px 20px rgba(218, 41, 28, 0.5);
+}
+
+@keyframes pulse-mcdonalds {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+.order-details {
+  margin: 20px 40px;
+  padding: 30px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.items-list {
+  background: #F5F5F5;
+  border-radius: 12px;
+  padding: 25px;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 2px solid #E0E0E0;
+  font-size: 1.3em;
+}
+
+.item-row:last-child {
+  border-bottom: none;
+}
+
+.payment-section {
+  margin: 20px 40px;
+}
+
+.payment-button {
+  display: block;
+  width: 100%;
+  padding: 25px;
+  background: #FFBC0D;
+  color: #292929;
+  text-decoration: none;
+  text-align: center;
+  border-radius: 15px;
+  font-size: 1.8em;
+  font-weight: bold;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(255, 188, 13, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.payment-button:hover {
+  background: #E6A800;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(255, 188, 13, 0.5);
+}
+
+.status-timeline {
+  margin: 20px 40px;
+  padding: 30px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.timeline {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 30px;
+  background: #F5F5F5;
+  border-radius: 12px;
+  position: relative;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 25%;
+  right: 25%;
+  height: 4px;
+  background: #E0E0E0;
+  z-index: 0;
+}
+
+.timeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  opacity: 0.4;
+  transition: opacity 0.3s;
+  z-index: 1;
+}
+
+.timeline-step.active {
+  opacity: 1;
+}
+
+.timeline-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #CCC;
+  border: 4px solid #CCC;
+  transition: all 0.3s;
+}
+
+.timeline-step.active .timeline-dot {
+  background: #FFBC0D;
+  border-color: #FFBC0D;
+  box-shadow: 0 0 20px rgba(255, 188, 13, 0.6);
+}
+
+.timeline-label {
+  font-weight: bold;
+  font-size: 1.2em;
+  color: #666;
+  text-align: center;
+}
+
+.timeline-step.active .timeline-label {
+  color: #292929;
+}
+
+.new-order-button {
+  background: #FFBC0D;
+  color: #292929;
+  margin: 20px 40px;
+}
+
+.new-order-button:hover {
+  background: #E6A800;
+  box-shadow: 0 6px 16px rgba(255, 188, 13, 0.5);
+}
+
+/* Out of Stock Styling */
+.menu-item.out-of-stock {
+  opacity: 0.6;
+  position: relative;
+}
+
+.menu-item.out-of-stock:hover {
+  transform: none;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  border-color: transparent;
+  cursor: not-allowed;
+}
+
+.menu-item.out-of-stock .item-image {
+  filter: grayscale(50%);
+}
+
+.item-name-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.out-of-stock-badge {
+  display: inline-block;
+  background: #DA291C;
+  color: white;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 0.5em;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 8px rgba(218, 41, 28, 0.4);
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2em;
+    padding: 20px;
+  }
+
+  h2 {
+    font-size: 1.5em;
+  }
+
+  .menu-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .menu-item {
+    margin-bottom: 0;
+  }
+
+  .item-image {
+    height: 220px;
+  }
+
+  .item-info {
+    padding: 20px;
+    text-align: center;
+  }
+
+  .item-name {
+    font-size: 1.8em;
+  }
+
+  .item-description {
+    font-size: 1.1em;
+  }
+
+  .item-price {
+    font-size: 1.6em;
+  }
+
+  .quantity-controls {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .quantity-controls button {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+  }
+
+  .quantity {
+    font-size: 1.5em;
+  }
+
+  .total-section {
+    font-size: 1.3em;
+    padding: 20px;
+  }
+
+  .total-amount {
+    font-size: 1.5em;
+  }
+
+  .submit-button,
+  .payment-button,
+  .new-order-button {
+    font-size: 1.3em;
+    padding: 20px;
+  }
+
+  .timeline {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .timeline::before {
+    top: 15%;
+    bottom: 15%;
+    left: 50%;
+    width: 4px;
+    height: auto;
+  }
+}
+
+/* Large Touchscreens */
+@media (min-width: 1200px) {
+  h1 {
+    font-size: 4em;
+    padding: 40px;
+  }
+
+  .item-image {
+    height: 320px;
+  }
+
+  .item-info {
+    padding: 30px 35px;
+  }
+
+  .item-name {
+    font-size: 2.5em;
+  }
+
+  .item-description {
+    font-size: 1.3em;
+  }
+
+  .item-price {
+    font-size: 2.2em;
+  }
+
+  .quantity-controls button {
+    width: 70px;
+    height: 70px;
+    font-size: 36px;
+  }
+
+  .quantity {
+    font-size: 2.5em;
+    min-width: 80px;
+  }
+}
+
+/* Success Message after Order Creation */
+.success-message {
+  background: white;
+  padding: 40px;
+  margin: 20px 40px;
+  border-radius: 15px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+.success-message h1 {
+  background: none;
+  color: #27AE60;
+  padding: 0;
+  margin-bottom: 30px;
+  box-shadow: none;
+  font-size: 3em;
+  animation: bounce-in 0.6s ease-out;
+}
+
+@keyframes bounce-in {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.order-created {
+  background: #F0F8FF;
+  padding: 30px;
+  border-radius: 12px;
+  border: 3px solid #FFBC0D;
+}
+
+.order-number-preview {
+  font-size: 1.8em;
+  color: #292929;
+  margin-bottom: 20px;
+}
+
+.order-number-preview strong {
+  color: #DA291C;
+  font-size: 1.3em;
+  font-family: 'Courier New', monospace;
+}
+
+.next-step {
+  font-size: 1.3em;
+  color: #666;
+  font-weight: 600;
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(255, 188, 13, 0.2);
+  border-radius: 8px;
+}
+
+/* McDonald's Receipt/Abholschein Style */
+.receipt-header {
+  background: white;
+  padding: 40px;
+  margin: 20px 40px;
+  border-radius: 15px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+.receipt-header h1 {
+  background: none;
+  color: #292929;
+  padding: 0;
+  margin-bottom: 30px;
+  box-shadow: none;
+  font-size: 2.5em;
+}
+
+.order-number-display {
+  background: #FFBC0D;
+  padding: 40px;
+  border-radius: 15px;
+  border: 4px dashed #DA291C;
+  margin-top: 20px;
+}
+
+.order-number-label {
+  color: #292929;
+  font-size: 1.3em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 15px;
+}
+
+.order-number-big {
+  color: #DA291C;
+  font-size: 5em;
+  font-weight: 900;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 3px;
+  margin: 20px 0;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+  animation: pulse-number 2s ease-in-out infinite;
+}
+
+@keyframes pulse-number {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.order-number-note {
+  color: #292929;
+  font-size: 1.2em;
+  font-weight: 600;
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+}
+
+/* Processing Indicator */
+.processing-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 40px;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #FFBC0D;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.processing-indicator p {
+  font-size: 1.3em;
+  color: #292929;
+  font-weight: 500;
+}
+
+/* Printable Receipt */
+.printable-receipt {
+  margin: 30px 40px;
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.receipt-section h2 {
+  margin-top: 0;
+  border-bottom: 3px solid #FFBC0D;
+  padding-bottom: 15px;
+  text-align: center;
+}
+
+/* Order Number in Receipt */
+.receipt-order-number {
+  background: #FFBC0D;
+  padding: 30px;
+  margin: 30px 0;
+  border-radius: 12px;
+  text-align: center;
+  border: 3px dashed #DA291C;
+}
+
+.receipt-number-label {
+  font-size: 1.2em;
+  font-weight: 600;
+  color: #292929;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.receipt-number-big {
+  font-size: 4em;
+  font-weight: 900;
+  color: #DA291C;
+  font-family: 'Courier New', monospace;
+  margin: 15px 0;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.receipt-number-note {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: #292929;
+  margin-top: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+}
+
+.receipt-items {
+  margin-top: 30px;
+}
+
+.receipt-items h3 {
+  color: #292929;
+  font-size: 1.5em;
+  margin-bottom: 20px;
+  text-align: left;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+}
+
+.receipt-item-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 100px 100px;
+  gap: 15px;
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 1.1em;
+}
+
+.item-qty {
+  font-weight: 700;
+  color: #DA291C;
+}
+
+.item-name {
+  font-weight: 600;
+}
+
+.item-price,
+.item-total {
+  text-align: right;
+  font-weight: 600;
+}
+
+.receipt-divider {
+  height: 3px;
+  background: #FFBC0D;
+  margin: 20px 0;
+}
+
+.receipt-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.5em;
+  font-weight: 700;
+  padding: 20px 0;
+  color: #292929;
+}
+
+.receipt-total .total-amount {
+  color: #DA291C;
+  font-size: 1.3em;
+}
+
+.print-button {
+  width: 100%;
+  padding: 20px;
+  margin-top: 30px;
+  background: #FFBC0D;
+  color: #292929;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.3em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.print-button:hover {
+  background: #FFA500;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+}
+
+@media print {
+  .print-button,
+  .new-order-button,
+  .status-timeline {
+    display: none !important;
+  }
+
+  .printable-receipt {
+    box-shadow: none;
+    margin: 0;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .receipt-header h1 {
+    font-size: 1.8em;
+  }
+
+  .order-number-display {
+    padding: 30px 20px;
+  }
+
+  .order-number-big {
+    font-size: 3.5em;
+  }
+
+  .order-number-label,
+  .order-number-note {
+    font-size: 1em;
+  }
+
+  .receipt-item-row {
+    grid-template-columns: 50px 1fr 80px 80px;
+    gap: 10px;
+    font-size: 0.95em;
+  }
+
+  .printable-receipt {
+    margin: 20px;
+    padding: 20px;
+  }
+}
+
+/* Ready Pickup Screen - Clean McDonald's Style */
+.ready-pickup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 40px;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  margin: 20px;
+  border-radius: 20px;
+  color: white;
+}
+
+.ready-pickup .ready-icon {
+  font-size: 100px;
+  margin-bottom: 20px;
+  animation: bounce 1s ease infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+.ready-pickup h1 {
+  background: transparent;
+  color: white;
+  font-size: 2.5em;
+  padding: 0;
+  box-shadow: none;
+  margin-bottom: 20px;
+}
+
+.ready-pickup .pickup-message {
+  font-size: 1.8em;
+  font-weight: bold;
+  opacity: 0.9;
+}

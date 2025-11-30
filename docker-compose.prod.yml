@@ -1,0 +1,457 @@
+# Production Docker Compose
+# Build and test production images before K8s deployment
+# Usage: docker-compose -f docker-compose.prod.yml up --build
+
+services:
+  # ========================================
+  # Infrastructure Services
+  # ========================================
+
+  consul:
+    image: hashicorp/consul:latest
+    container_name: consul-prod
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    command: agent -server -ui -bootstrap-expect=1 -client=0.0.0.0
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-prod
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    container_name: otel-collector-prod
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "13133:13133"
+    depends_on:
+      jaeger:
+        condition: service_started
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger-prod
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+      - "14250:14250"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:14269"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-prod
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-prod
+    ports:
+      - "3002:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3002
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ========================================
+  # Databases
+  # ========================================
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb-prod
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=orders
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express-prod
+    ports:
+      - "8085:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_BASICAUTH=false
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-prod
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # ⭐ Mount entire migrations directory - PostgreSQL runs all .sql files alphabetically
+      - ./stock/migrations:/docker-entrypoint-initdb.d:ro
+    environment:
+      - POSTGRES_USER=stock
+      - POSTGRES_PASSWORD=stock123
+      - POSTGRES_DB=stock
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stock"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin-prod
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@stock.com
+      - PGADMIN_DEFAULT_PASSWORD=admin123
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-prod
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ========================================
+  # Application Services (Production Images)
+  # ========================================
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    image: oms-gateway:latest
+    container_name: gateway-prod
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVICE_NAME=gateway
+      - HTTP_ADDR=0.0.0.0:8080
+      - SERVICE_ADDR=
+      - CONSUL_ADDR=
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+    depends_on:
+      consul:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  orders:
+    build:
+      context: .
+      dockerfile: orders/Dockerfile
+    image: oms-orders:latest
+    container_name: orders-prod
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - SERVICE_NAME=orders
+      - GRPC_ADDR=0.0.0.0:9000
+      - SERVICE_ADDR=orders:9000
+      - METRICS_ADDR=0.0.0.0:9001
+      - CONSUL_ADDR=
+      - MONGO_URI=mongodb://mongodb:27017/orders
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - AMQP_USER=guest
+      - AMQP_PASS=guest
+      - AMQP_HOST=rabbitmq
+      - AMQP_PORT=5672
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
+    depends_on:
+      consul:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  payments:
+    build:
+      context: .
+      dockerfile: payments/Dockerfile
+    image: oms-payments:latest
+    container_name: payments-prod
+    ports:
+      - "9002:9002"
+      - "8082:8082"
+    environment:
+      - SERVICE_NAME=payments
+      - HTTP_ADDR=0.0.0.0:8082
+      - CONSUL_ADDR=
+      - AMQP_HOST=rabbitmq
+      - AMQP_PORT=5672
+      - AMQP_USER=guest
+      - AMQP_PASS=guest
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
+      - ORDERS_GRPC_ADDR=orders:9000
+    depends_on:
+      consul:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8082/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  stock:
+    build:
+      context: .
+      dockerfile: stock/Dockerfile
+    image: oms-stock:latest
+    container_name: stock-prod
+    ports:
+      - "9003:9003"
+      - "8083:8083"
+    environment:
+      - SERVICE_NAME=stock
+      - GRPC_ADDR=0.0.0.0:9003
+      - SERVICE_ADDR=stock:9003
+      - HTTP_ADDR=0.0.0.0:8083
+      - CONSUL_ADDR=
+      - POSTGRES_URI=postgres://stock:stock123@postgres:5432/stock?sslmode=disable
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=stock
+      - POSTGRES_PASSWORD=stock123
+      - POSTGRES_DB=stock
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASS=guest
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - REDIS_ADDR=redis:6379
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
+    depends_on:
+      consul:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8083/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  kitchen:
+    build:
+      context: .
+      dockerfile: kitchen/Dockerfile
+    image: oms-kitchen:latest
+    container_name: kitchen-prod
+    ports:
+      - "9004:8083"
+    environment:
+      - SERVICE_NAME=kitchen
+      - HTTP_ADDR=0.0.0.0:8083
+      - CONSUL_ADDR=
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - AMQP_USER=guest
+      - AMQP_PASS=guest
+      - AMQP_HOST=rabbitmq
+      - AMQP_PORT=5672
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
+    depends_on:
+      consul:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+
+  # ========================================
+  # Frontend Applications
+  # ========================================
+
+  customer-app:
+    build:
+      context: ./customer-app
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: http://localhost:8080/api
+        REACT_APP_OTEL_COLLECTOR_URL: http://localhost:4318/v1/traces
+    image: oms-customer-app:latest
+    container_name: customer-app-prod
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  kitchen-display:
+    build:
+      context: ./kitchen-display
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: http://localhost:8080/api
+        REACT_APP_OTEL_COLLECTOR_URL: http://localhost:4318/v1/traces
+    image: oms-kitchen-display:latest
+    container_name: kitchen-display-prod
+    ports:
+      - "3001:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ========================================
+  # Development Tools (Optional)
+  # ========================================
+
+  stripe-cli:
+    image: stripe/stripe-cli:latest
+    container_name: stripe-cli-prod
+    command: listen --forward-to payments:8082/webhook --skip-verify
+    environment:
+      - STRIPE_API_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_DEVICE_NAME=docker-stripe-cli-prod
+    depends_on:
+      payments:
+        condition: service_started
+    restart: unless-stopped
+
+# ========================================
+# Volumes for Data Persistence
+# ========================================
+volumes:
+  mongodb_data:
+    name: oms_mongodb_prod
+  postgres_data:
+    name: oms_postgres_prod
+  redis_data:
+    name: oms_redis_prod
+  rabbitmq_data:
+    name: oms_rabbitmq_prod
+  prometheus_data:
+    name: oms_prometheus_prod
+  grafana_data:
+    name: oms_grafana_prod
