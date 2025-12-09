@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	pb "github.com/timour/order-microservices/common/api"
+	"github.com/redis/go-redis/extra/redisotel/v9"
 	"github.com/redis/go-redis/v9"
+	pb "github.com/timour/order-microservices/common/api"
 )
 
 // ItemCache implements Cache-Aside pattern for menu items
@@ -17,12 +18,24 @@ type ItemCache struct {
 }
 
 // NewItemCache creates a new Redis cache client
+// OpenTelemetry: Traces für alle Redis Operations via redisotel
 func NewItemCache(addr string, ttl time.Duration) (*ItemCache, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: "", // no password
 		DB:       0,  // default DB
 	})
+
+	// Enable OpenTelemetry tracing for Redis
+	// All Redis commands will now generate spans in Jaeger
+	if err := redisotel.InstrumentTracing(client); err != nil {
+		return nil, fmt.Errorf("failed to instrument redis tracing: %w", err)
+	}
+
+	// Enable OpenTelemetry metrics for Redis
+	if err := redisotel.InstrumentMetrics(client); err != nil {
+		return nil, fmt.Errorf("failed to instrument redis metrics: %w", err)
+	}
 
 	// Test connection
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)

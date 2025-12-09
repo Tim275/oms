@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/XSAM/otelsql"
 	"github.com/lib/pq"
 	pb "github.com/timour/order-microservices/common/api"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 )
 
 // PostgresStore implementiert Store Interface mit PostgreSQL
@@ -16,10 +18,29 @@ type PostgresStore struct {
 
 // NewPostgresStore erstellt eine neue PostgreSQL Store Instanz
 // Cloud-Native: Auto-Migration bei Startup (Application owns its schema)
+// OpenTelemetry: Traces für alle SQL Queries via otelsql
 func NewPostgresStore(connectionString string) (*PostgresStore, error) {
-	db, err := sql.Open("postgres", connectionString)
+	// Register the otelsql wrapper for the postgres driver
+	// This enables automatic tracing for all database operations
+	driverName, err := otelsql.Register("postgres",
+		otelsql.WithAttributes(semconv.DBSystemPostgreSQL),
+		otelsql.WithSpanOptions(otelsql.SpanOptions{
+			Ping:     true,
+			RowsNext: false, // Avoid noise from row iteration
+		}),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to register otelsql driver: %w", err)
+	}
+
+	db, err := sql.Open(driverName, connectionString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
+
+	// Register DB stats metrics for Prometheus/OpenTelemetry
+	if err := otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(semconv.DBSystemPostgreSQL)); err != nil {
+		return nil, fmt.Errorf("failed to register db stats metrics: %w", err)
 	}
 
 	// Test connection

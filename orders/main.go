@@ -14,6 +14,7 @@ import (
 	"github.com/timour/order-microservices/common/tracing"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 )
 
 func main() {
@@ -87,11 +88,18 @@ func main() {
 }
 
 // connectToMongoDB establishes connection to MongoDB
+// OpenTelemetry: Traces für alle MongoDB Operations via otelmongo
 func connectToMongoDB(uri string) (*mongo.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	// Configure MongoDB client with OpenTelemetry monitoring
+	// All MongoDB operations will now generate spans in Jaeger
+	opts := options.Client().
+		ApplyURI(uri).
+		SetMonitor(otelmongo.NewMonitor())
+
+	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
