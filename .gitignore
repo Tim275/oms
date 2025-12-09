@@ -57,6 +57,8 @@ observability/grafana/
 # Work-in-Progress Features (WIP)
 # Business Metrics implementation files - Test before committing!
 # common/metrics/business_metrics.go  # Uncomment to ignore
-# E2E Test scripts are in .md format (already ignored above)
 # scripts/e2e-test.sh  # Uncomment to ignore
-*.md
+
+# Claude files (keep local only)
+CLAUDE.md
+.claude/
